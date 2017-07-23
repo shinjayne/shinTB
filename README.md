@@ -10,7 +10,7 @@ implemented by tensorflow, cv2
 
 <hr/>
 
-`shintb` : useable textboxes python package
+`shintb` : useable textboxes python package (***Source codes are in here***)
 
 `svt1` : Street view Text dataset. can use with `shintb.svt_data_loader.SVTDataLoader` when training Textboxes model
 
