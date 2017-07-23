@@ -57,7 +57,7 @@ from shintb import graph_drawer, default_box_control, svt_data_loader, runner
 runner = runner.Runner(config, graphdrawer, dataloader, dbcontrol)
 ```
 11. `Runner` uses `GraphDrawer`,`DefaultBoxControl`,`SVTDataLoader` instance.
-12. If you want to train your Textboxes model, use `Runner.train()`.
+12. If you want to train your Textboxes model, use `Runner.train()`. Every 1000 step, `shintb` will save ckpt file in the directory you set in `config.py`.
 ```
 runner.train()
 ```
