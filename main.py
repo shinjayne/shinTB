@@ -1,33 +1,23 @@
+from config import config
+from shintb import graph_drawer ,svt_data_loader, default_box_control, runner
+
 import tensorflow as tf
-import numpy as np
-import cv2
 
+flags = tf.app.flags
+FLAGS = flags.FLAGS
 
+graphdrawer = graph_drawer.GraphDrawer(config)
 
-# 1. data prepare / default_box prepare / pos and neg prepare
-# 2. draw graph
-# 3. run
+dataloader = svt_data_loader.SVTDataLoader('./svt1/train.xml', './svt1/test.xml')
 
+dbcontrol = default_box_control.DefaultBoxControl(config, graphdrawer)
 
-# constant
-img_wh = 300
+runner = runner.Runner(config, graphdrawer, dataloader, dbcontrol)
 
-total_boxes = 23280
+if __name__ == "__main__":
+	flags.DEFINE_string("mode", "train", "train, image")
 
-# hyperparams
-
-
-
-
-
-
-# runtime
-
-with tf.Session(graph = g) as sess :
-    sess.run(tf.global_variables_initializer())
-
-    while True :
-        lr = learning_rate_maker(sess.run(global_step))
-
-
-
+	if FLAGS.mode == "train":
+		runner.train()
+	elif FLAGS.mode == "image":
+		runner.image()

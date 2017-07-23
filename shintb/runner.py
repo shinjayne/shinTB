@@ -20,8 +20,8 @@ class Runner :
 
         c = self.config
         g = self.graph
-        print(tf.global_variables())
-        # self.sess.run(tf.global_variables_initializer())
+        print(tf.global_variables()[0])
+        self.sess.run(tf.global_variables_initializer())
 
         ckpt = tf.train.get_checkpoint_state(c["model_dir"])
 
@@ -41,7 +41,7 @@ class Runner :
                                                                           g.batch_norm_ph : False})
 
             print(">>>calculating (positive, negative, true_location) with jaccard overlap by DefaultBoxControl ...", end=" ")
-            positive, negative , true_loc = self.dbcontrol.calculate_pos_neg_trueloc(train_gtboxes, pred_conf)
+            positive, negative , true_loc = self.dbcontrol.calculate_pos_neg_trueloc(pred_conf, train_gtboxes)
             print("Done!")
 
 
@@ -73,3 +73,5 @@ class Runner :
             if global_step % 1000 == 0 :
                 self.saver.save(self.sess, "%s.ckpt" % c["model_dir"],global_step)
 
+    def image(self):
+        return 0

@@ -9,7 +9,7 @@ class DefaultBoxControl:
         self.graph = graphdrawer
 
         # shape of out1, out2, out3, out4, out5, out6 in textbox layer
-        # list( [y(i),x(i)] for i in range(6) )
+        # list( [?, y(i), x(i), 72] for i in range(6) )
         self.out_shape = self.calculate_out_shape()
         print(">>>Check textbox layers(6) shape : \n", self.out_shape, "Done!")
 
@@ -42,7 +42,7 @@ class DefaultBoxControl:
         for o_i in range(len(self.out_shape)):  # 6
             print("default boxes in map point ", o_i, " :", end=" ")
             layer_boxes = []
-            layer_shape = self.out_shape[o_i]  # [y(i), x(i)]
+            layer_shape = self.out_shape[o_i]  # [?, y(i), x(i), 72]
             s_k = self.calculate_box_scale(o_i + 1)
             for x in range(layer_shape[2]):
                 x_boxes = []
@@ -110,7 +110,7 @@ class DefaultBoxControl:
         positive_count = 0
 
         # iteration : for each ground_truth_box
-        for index, (gt_box, box_id) in zip(range(len(gtboxes_i)), gtboxes_i):
+        for (gt_box, box_id) in  gtboxes_i :
             #################################
             # about this ground_truth_box ...
             #################################
@@ -157,7 +157,7 @@ class DefaultBoxControl:
                             # c.defaults[map_location][x][y][12]
                             # (x,y) 에서의 12 번째 default_box 정보
 
-                            box = c.defaults[o][x][y][i]
+                            box = self.default_boxes[o][x][y][i]
                             # 이 box 안에도 scaled 된 default box (x,y,w,h) 정보가 들어있으므로
                             # 바로 gt_box 와 비교가능
 
@@ -275,7 +275,7 @@ class DefaultBoxControl:
                             positives_list.append(1)
                             negatives_list.append(0)
                             true_labels_list.append(match[1])  # groundtruth id
-                            default = c.defaults[o][x][y][i]  # default box
+                            default = self.default_boxes[o][x][y][i]  # default box
                             true_locs_list.append(boxcal.calc_offsets(default, boxcal.corner2centerbox(match[0])))
                         elif match == -1:  # this default box was chosen to be a negative
                             positives_list.append(0)
