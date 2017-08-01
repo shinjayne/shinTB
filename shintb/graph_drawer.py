@@ -16,6 +16,7 @@ class GraphDrawer:
         self.draw_loss_function()
         self.draw_optimizer()
         self.init_op = self.draw_init_op()
+        self.draw_summary_op()
         print("Complete !!!")
 
     def draw_placeholders(self):
@@ -107,23 +108,30 @@ class GraphDrawer:
 
         with tf.name_scope(name="predictions") as scope :
             self.pred_conf , self.pred_loc = tf.split(pred_boxes, [2,4], axis = 2)
-            #self.pred_confs : [?, 23280 , 2]
-            #self.pred_locs : [? ,23280, 4]
+            #self.pred_conf : [?, 23280 , 2]
+            #self.pred_loc : [? ,23280, 4]
 
         print("Done!")
 
     def draw_loss_function(self):
         print(">>>Draw loss function ...", end=" ")
-        text_conf , background_conf = tf.split(self.pred_conf, 2, 2)
+        # [?, 23280, 2]
+        pred_conf_softmax =  tf.nn.softmax(self.pred_conf, -1)
+        # [?, 23280, 1], [?, 23280, 1]
+        text_conf , background_conf = tf.split(pred_conf_softmax, 2, 2)
+        # [?, 23280]
         text_conf = tf.reshape(text_conf, [-1, text_conf.get_shape().as_list()[1]] )
+        # [?, 23280]
         background_conf = tf.reshape(background_conf, [-1, background_conf.get_shape().as_list()[1]])
-        self.conf_loss =  - tf.reduce_sum(tf.log(tf.nn.softmax(text_conf))*self.positive_ph) - tf.reduce_sum(tf.log(tf.nn.softmax(background_conf))*self.negative_ph)
+        self.conf_loss =  - tf.reduce_sum(tf.log(text_conf)*self.positive_ph) - tf.reduce_sum(tf.log(background_conf)*self.negative_ph)
 
         loc_loss = tf.reduce_sum(gc.smooth_l1(self.pred_loc - self.true_loc_ph), reduction_indices= 2) * self.positive_ph
         self.loc_loss = tf.reduce_sum(loc_loss, reduction_indices= 1) / (tf.reduce_sum(self.positive_ph, reduction_indices = 1) + 1e-5)
         # 1e-5 는 분모가 0일 경우를 방지
 
         self.total_loss = tf.reduce_mean(self.conf_loss + self.loc_loss)
+
+
         print("Done!")
 
     def draw_optimizer(self):
@@ -137,3 +145,13 @@ class GraphDrawer:
     def draw_init_op(self):
         init_op = tf.global_variables_initializer()
         return init_op
+
+    def draw_summary_op(self):
+        print(">>>Draw summary op ...", end=" ")
+        tf.summary.scalar("loss/conf_loss", tf.reshape(tf.reduce_sum(self.conf_loss), shape=[]))
+        tf.summary.scalar("loss/loc_loss", tf.reshape(tf.reduce_sum(self.loc_loss), shape=[]))
+        tf.summary.scalar("loss/total_loss",  tf.reshape(self.total_loss, shape=[]))
+
+        self.summaries = tf.summary.merge_all()
+        print("Done!")
+

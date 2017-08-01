@@ -1,5 +1,6 @@
 import shintb.utils.box_calculation as boxcal
 import numpy as np
+import tensorflow as tf
 
 
 class DefaultBoxControl:
@@ -67,7 +68,10 @@ class DefaultBoxControl:
 
         return boxes
 
+
+    # pred_conf : [?, 23280, 2]
     def calculate_pos_neg_trueloc(self, pred_conf, gtboxes):
+        print("calculate_pos_neg_trueloc START")
         c = self.config
 
         pos_neg_trueloc = [None for i in range(c["batch_size"])]
@@ -81,14 +85,12 @@ class DefaultBoxControl:
 
         positive, negative, _true_conf ,true_loc = [np.stack(m) for m in zip(*pos_neg_trueloc)]
 
-
+        print("calculate_pos_neg_trueloc END")
         return positive, negative, true_loc
 
-
-
-
+    # pred_conf_i : [23280, 2]
     def matching_dbboxes_gtboxes_in_batch_i(self, pred_conf_i, gtboxes_i):
-
+        print("matching_dbboxes_gtboxes_in_batch_i START")
         c = self.config
 
         #default box들의 좌표와 번째 수를 나열해놓은 리스트
@@ -204,6 +206,7 @@ class DefaultBoxControl:
         negative_max = positive_count * c["neg/pos"]
         negative_count = 0
 
+        # pred_conf_i : [ 23280, 2]
         top_confidences = self.get_top_confidences(pred_conf_i, negative_max)
         # top confidence 들의 index list 를 반환
 
@@ -229,22 +232,48 @@ class DefaultBoxControl:
 
         #print("%i positives" % positive_count)
         #print("%i/%i negatives" % (negative_count, negative_max))
-
+        print("matching_dbboxes_gtboxes_in_batch_i END")
         return matches
 
-    def get_top_confidences(self, pred_conf, negative_max):
+    #pred_conf_i : [23280, 2]
+    def get_top_confidences(self, pred_conf_i, negative_max):
+        print("get_top_confidences START")
         confidences = []
 
+        # pred_conf_i : [23280, 2]
+        #logits : [c1, c2]
+
+        # 오버플로우 방지!
+        def softmax_without_overflow(a, reduce_axis=1) :
+            c = np.max(a, reduce_axis)
+            c = np.reshape(c, [-1,1])
+            exp_a = np.exp(a - c)
+            sum_exp_a = a.sum(reduce_axis)
+            sum_exp_a = np.reshape(sum_exp_a, [-1, 1])
+
+            return exp_a / (sum_exp_a + 1.0e-4)
+
+        pred_conf_i_softmax =  softmax_without_overflow(pred_conf_i)
+        # pred_conf_i_softmax = tf.nn.softmax(pred_conf_i, -1)
+
+        for probs in pred_conf_i_softmax :
+            top_confidence = np.amax(probs)
+            confidences.append(top_confidence)
+
+        '''
         for logits in pred_conf:
-            probs = np.exp(logits) / np.add(np.sum(np.exp(logits)), 1e-3)
+            #probs = (1.0/np.exp(-logits)) / np.add(np.sum((1.0/np.exp(-logits))), 1e-3)
+            probs = tf.nn.softmax(logits)
+            # probs : [softmax_c1, softmax_c2]
             top_label = np.amax(probs)
             confidences.append(top_label)
-
+        '''
         # top_confidences = sorted(confidences, key=lambda tup: tup[1])[::-1]
 
         k = min(negative_max, len(confidences))
         top_confidences = np.argpartition(np.asarray(confidences), -k)[-k:]
 
+        print("get_top_confidences END")
         return top_confidences
 
     # prepare_feed  (이미지 하나에 대하여)
@@ -255,7 +284,7 @@ class DefaultBoxControl:
     # a_true_labels (23280, )
     # a_true_locs (23280, 4)
     def prepare_pos_neg_trueloc_in_matches(self, matches):
-
+        print("prepare_pos_neg_trueloc_in_matches START")
         c = self.config
 
         positives_list = []
@@ -298,6 +327,7 @@ class DefaultBoxControl:
         a_true_labels = np.asarray(true_labels_list)
         a_true_locs = np.asarray(true_locs_list)
 
+        print("prepare_pos_neg_trueloc_in_matches END  ")
         return a_positives, a_negatives, a_true_labels, a_true_locs
 
 

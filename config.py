@@ -1,14 +1,17 @@
 # Configuration for Model Tuning
 config = {
+	#Dataset
+	"train_data_xml" : "svt1/train.xml",
+	"test_data_xml" : "svt1/test.xml" ,
     #image size
     "image_size" : 300.0,
     ##################
     # In Learning
     ##################
     # Restoring variables from ckpt file
-    "model_dir" : "saved/model1",
+    "saved_dir" : "saved",
     # Random images Batch size in training
-    "batch_size" : 8,
+    "batch_size" : 1,
     # Learning rate until step 4000, 180000, 240000, and after
     "learning_rate_list" : [8e-4, 1e-3, 1e-4, 1e-5] ,
     # Whether Doing Batch Normalization in training phase
